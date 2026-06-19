@@ -15,9 +15,8 @@ muscle memory into text (`Cmd+V`) vs image (`Ctrl+V`).
 
 `ghostty-paste` is a tiny daemon that taps `Cmd+V` globally and:
 
-- If **Ghostty is frontmost** and the clipboard holds an **image** → saves it as a PNG,
-  swallows the original `Cmd+V`, and types the file path instead (the app recognizes the
-  path as an image attachment).
+- If **Ghostty is frontmost** and the clipboard holds an **image** → swallows the original
+  `Cmd+V` and sends `Ctrl+V` instead, triggering Claude Code's native image paste.
 - Otherwise (text, or any other app) → stays out of the way and lets `Cmd+V` through.
 
 ## Requirements
@@ -28,13 +27,13 @@ muscle memory into text (`Cmd+V`) vs image (`Ctrl+V`).
 
 ## Install
 
-### Option 1 — One-liner (prebuilt binary, easiest)
+### Option 1 — One-liner (prebuilt app, easiest)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | bash
 ```
 
-Downloads the latest release's universal binary into `~/.local/bin`, registers the
+Downloads the latest release's universal `.app` into `~/Applications`, registers the
 LaunchAgent (auto-start on login), and strips the Gatekeeper quarantine attribute. Pin a
 version by passing a tag:
 
@@ -60,7 +59,8 @@ standard macOS permission dialog and registers itself in the list, so you only f
 2. Turn the **ghostty-paste** toggle **on**
 
 It activates automatically within ~2s — no restart needed. Copy an image, focus Ghostty,
-press `Cmd+V` — the path gets typed in.
+press `Cmd+V` — Claude Code receives it as a real image attachment, just like pressing
+`Ctrl+V` directly.
 
 > Upgrading from an older build and paste stopped working? Remove the stale `ghostty-paste`
 > entry (select it, click **−**), run `make install` again, then re-enable the toggle.
@@ -83,7 +83,6 @@ see `launchagent/...plist.template`):
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `GHOSTTY_PASTE_BUNDLE_ID` | `com.mitchellh.ghostty` | Bundle ID of the app to act on |
-| `GHOSTTY_PASTE_CACHE_DIR` | `~/.cache/ghostty-paste` | Where PNGs are saved |
 
 Find a bundle ID: `osascript -e 'id of app "Ghostty"'`
 
@@ -131,7 +130,7 @@ Reverse by renaming it back, or reinstall CLT:
 ```
 Cmd+V (Ghostty frontmost)
    │
-   ├─ clipboard is an image?  ── yes ─▶ save PNG → swallow Cmd+V → type the path
+   ├─ clipboard is an image?  ── yes ─▶ swallow Cmd+V → send Ctrl+V
    │
    └─ no (text / other app) ──▶ pass through (normal Cmd+V)
 ```

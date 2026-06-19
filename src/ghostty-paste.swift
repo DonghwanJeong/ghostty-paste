@@ -1,66 +1,81 @@
 import Cocoa
 import ApplicationServices
+import Carbon.HIToolbox
 
-// Ghostty에서 Cmd+V를 눌렀을 때 클립보드에 이미지가 있으면 PNG로 저장한 뒤
-// 그 경로를 타이핑한다(Claude Code 등이 경로를 이미지 첨부로 인식).
-// 텍스트면 손대지 않고 평소처럼 그대로 붙여넣는다.
+// Ghostty에서 Cmd+V를 눌렀을 때, 클립보드에 이미지가 있으면 대신 Ctrl+V를 합성해 보낸다.
+// 그러면 Claude Code의 네이티브 클립보드 이미지 붙여넣기가 동작해 진짜 [Image] 첨부가 된다.
+// 텍스트(또는 다른 앱)면 손대지 않고 평소처럼 Cmd+V를 그대로 통과시킨다.
 //
-// 설정은 환경변수로 덮어쓸 수 있다(LaunchAgent의 EnvironmentVariables 참고):
+// 설정(환경변수, LaunchAgent의 EnvironmentVariables 참고):
 //   GHOSTTY_PASTE_BUNDLE_ID  대상 앱 번들 ID (기본: com.mitchellh.ghostty)
-//   GHOSTTY_PASTE_CACHE_DIR  이미지 저장 폴더 (기본: ~/.cache/ghostty-paste)
 
 let env = ProcessInfo.processInfo.environment
-
 let kTargetBundleID = env["GHOSTTY_PASTE_BUNDLE_ID"] ?? "com.mitchellh.ghostty"
-let kCacheDir = ((env["GHOSTTY_PASTE_CACHE_DIR"] ?? "~/.cache/ghostty-paste") as NSString)
-    .expandingTildeInPath
-let kVKeyCode: Int64 = 9  // kVK_ANSI_V
+let kVKeyCode: Int64 = Int64(kVK_ANSI_V)
+let kLockPath = ("~/.cache/ghostty-paste/.lock" as NSString).expandingTildeInPath
 
 nonisolated(unsafe) var eventTap: CFMachPort?
 
-func ensureCacheDir() {
-    try? FileManager.default.createDirectory(
-        atPath: kCacheDir, withIntermediateDirectories: true)
-}
-
-// 클립보드에 이미지가 있으면 PNG로 저장하고 경로를 돌려준다. 없으면 nil.
-func saveClipboardImageToFile() -> String? {
-    let pb = NSPasteboard.general
-    var png: Data?
-    if let d = pb.data(forType: .png) {
-        png = d
-    } else if let tiff = pb.data(forType: .tiff),
-              let rep = NSBitmapImageRep(data: tiff) {
-        png = rep.representation(using: .png, properties: [:])
-    }
-    guard let data = png else { return nil }
-
-    let fmt = DateFormatter()
-    fmt.dateFormat = "yyyyMMdd-HHmmss-SSS"
-    let path = "\(kCacheDir)/img-\(fmt.string(from: Date())).png"
-    do {
-        try data.write(to: URL(fileURLWithPath: path))
-        return path
-    } catch {
+func inputSourceID(_ source: TISInputSource) -> String? {
+    guard let raw = TISGetInputSourceProperty(source, kTISPropertyInputSourceID) else {
         return nil
     }
+    return unsafeBitCast(raw, to: CFString.self) as String
 }
 
-// 문자열을 키 입력으로 삽입한다(유니코드 직접 주입이라 키맵과 무관).
-func typeString(_ s: String) {
-    // privateState 소스 + 빈 flags로 합성한다. 그래야 아직 눌려 있는 Cmd 같은
-    // 모디파이어가 입력에 섞여 단축키로 해석되는 것을 막는다(안 그러면 글자가 안 들어감).
-    let src = CGEventSource(stateID: .privateState)
-    var chars = Array(s.utf16)
-    if let down = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true) {
-        down.flags = []
-        down.keyboardSetUnicodeString(stringLength: chars.count, unicodeString: &chars)
-        down.post(tap: .cghidEventTap)
+func preferredASCIIInputSource() -> TISInputSource? {
+    guard let list = TISCreateInputSourceList([
+        kTISPropertyInputSourceType: kTISTypeKeyboardLayout!,
+        kTISPropertyInputSourceIsASCIICapable: true
+    ] as CFDictionary, false)?.takeRetainedValue() as? [TISInputSource] else {
+        return nil
     }
-    if let up = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: false) {
-        up.flags = []
-        up.keyboardSetUnicodeString(stringLength: chars.count, unicodeString: &chars)
-        up.post(tap: .cghidEventTap)
+
+    let preferred = ["com.apple.keylayout.ABC", "com.apple.keylayout.US"]
+    return preferred.compactMap { id in
+        list.first { inputSourceID($0) == id }
+    }.first ?? list.first
+}
+
+func postKey(_ key: CGKeyCode, keyDown: Bool, flags: CGEventFlags) {
+    let src = CGEventSource(stateID: .privateState)
+    guard let event = CGEvent(keyboardEventSource: src, virtualKey: key, keyDown: keyDown) else {
+        return
+    }
+    event.flags = flags
+    event.post(tap: .cghidEventTap)
+}
+
+func postCtrlVKeyCombo() {
+    let control = CGKeyCode(kVK_Control)
+    let v = CGKeyCode(kVK_ANSI_V)
+
+    postKey(control, keyDown: true, flags: .maskControl)
+    postKey(v, keyDown: true, flags: .maskControl)
+    postKey(v, keyDown: false, flags: .maskControl)
+    postKey(control, keyDown: false, flags: [])
+}
+
+// Cmd+V 대신 Ctrl+V를 합성해 보낸다. 한글 입력 소스에서는 Ctrl+V가 ^V가 아니라
+// 다른 문자로 해석될 수 있으므로 잠깐 ASCII 입력 소스로 전환했다가 복구한다.
+func sendCtrlV() {
+    let original = TISCopyCurrentKeyboardInputSource().takeRetainedValue()
+    let originalID = inputSourceID(original)
+    let ascii = preferredASCIIInputSource()
+    let asciiID = ascii.flatMap(inputSourceID)
+    let needsSwitch = ascii != nil && originalID != asciiID
+
+    if needsSwitch, let ascii {
+        TISSelectInputSource(ascii)
+    }
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + (needsSwitch ? 0.04 : 0)) {
+        postCtrlVKeyCombo()
+        if needsSwitch {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                TISSelectInputSource(original)
+            }
+        }
     }
 }
 
@@ -78,7 +93,7 @@ let callback: CGEventTapCallBack = { _, type, event, _ in
         && !flags.contains(.maskAlternate)
         && !flags.contains(.maskShift)
 
-    // Cmd+V가 아니면 그대로 통과.
+    // Cmd+V가 아니면 그대로 통과(합성한 Ctrl+V도 cmdOnly가 아니라 여기서 통과 → 무한루프 없음).
     guard keycode == kVKeyCode, cmdOnly else {
         return Unmanaged.passUnretained(event)
     }
@@ -86,41 +101,35 @@ let callback: CGEventTapCallBack = { _, type, event, _ in
     guard NSWorkspace.shared.frontmostApplication?.bundleIdentifier == kTargetBundleID else {
         return Unmanaged.passUnretained(event)
     }
-    // 클립보드에 이미지 "타입"만 즉시 확인한다(디코딩/저장은 하지 않음).
-    // 이렇게 해야 콜백이 절대 블록되지 않아 키 입력이 느려지지 않는다.
+    // 클립보드에 이미지 "타입"만 즉시 확인(디코딩 없음 → 콜백을 블록하지 않음).
     guard NSPasteboard.general.availableType(from: [.png, .tiff]) != nil else {
         return Unmanaged.passUnretained(event)   // 이미지 아님(텍스트 등) → 평범한 Cmd+V 통과
     }
-    // 이미지면: 원래 Cmd+V는 삼키고, 무거울 수 있는 저장과 타이핑은 비동기로 처리한다
-    // (Cmd를 떼는 짧은 시간도 줘서 모디파이어 간섭을 줄인다).
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-        if let path = saveClipboardImageToFile() {
-            typeString(path + " ")
-        }
-    }
+    // 이미지면: 원래 Cmd+V는 삼키고, Cmd를 떼는 짧은 시간 뒤 Ctrl+V를 합성해 보낸다.
+    NSLog("ghostty-paste: image Cmd+V intercepted; sending Ctrl+V")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { sendCtrlV() }
     return nil
 }
 
-ensureCacheDir()
+// --- 시작 ---
 
-// 단일 인스턴스 보장: 락을 못 잡으면 다른 인스턴스가 이미 실행 중이므로 즉시 종료한다
-// (open으로 중복 실행돼 Cmd+V를 두 번 가로채는 것을 방지). fd는 닫지 않고 살려 둔다.
-let lockFD = open("\(kCacheDir)/.lock", O_CREAT | O_RDWR, 0o644)
+// 단일 인스턴스 보장: 락을 못 잡으면 다른 인스턴스가 이미 실행 중이므로 즉시 종료한다.
+try? FileManager.default.createDirectory(
+    atPath: (kLockPath as NSString).deletingLastPathComponent,
+    withIntermediateDirectories: true)
+let lockFD = open(kLockPath, O_CREAT | O_RDWR, 0o644)
 if lockFD < 0 || flock(lockFD, LOCK_EX | LOCK_NB) != 0 {
     NSLog("ghostty-paste: 이미 실행 중인 인스턴스가 있어 종료합니다")
     exit(0)
 }
 
-// 손쉬운 사용 권한이 없으면 시스템 권한 요청 다이얼로그를 띄운다. 이때 ghostty-paste가
-// "손쉬운 사용" 목록에 자동 등록되므로, 사용자는 목록에서 토글만 켜면 된다.
-// ("AXTrustedCheckOptionPrompt"는 kAXTrustedCheckOptionPrompt의 문자열 값)
+// 손쉬운 사용 권한이 없으면 시스템 권한 요청 다이얼로그를 띄운다(목록에 자동 등록됨).
 if !AXIsProcessTrusted() {
     _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
     NSLog("ghostty-paste: 손쉬운 사용 권한 대기 중… 토글을 켜면 자동으로 시작됩니다")
 }
 
-// 이벤트 탭 생성. 권한이 없으면 nil이 나오므로, 권한이 생길 때까지 재시도한다
-// (권한을 켜는 즉시 자동 활성화되어 make reload가 필요 없다).
+// 권한이 생길 때까지 이벤트 탭 생성을 재시도한다(권한 켜는 즉시 자동 활성화).
 func makeTap() -> CFMachPort? {
     CGEvent.tapCreate(
         tap: .cgSessionEventTap,
@@ -132,8 +141,13 @@ func makeTap() -> CFMachPort? {
 }
 
 var tapOpt = makeTap()
+var tapAttempts = 0
 while tapOpt == nil {
     Thread.sleep(forTimeInterval: 2)
+    tapAttempts += 1
+    if tapAttempts % 5 == 0 {
+        NSLog("ghostty-paste: 이벤트 탭 생성 대기 중 — 손쉬운 사용 권한을 확인하세요")
+    }
     tapOpt = makeTap()
 }
 let tap = tapOpt!
@@ -142,5 +156,5 @@ eventTap = tap
 let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
 CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
 CGEvent.tapEnable(tap: tap, enable: true)
-NSLog("ghostty-paste: running — target=\(kTargetBundleID) cache=\(kCacheDir)")
+NSLog("ghostty-paste: running — target=\(kTargetBundleID), Cmd+V→Ctrl+V on image")
 CFRunLoopRun()

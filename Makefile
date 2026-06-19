@@ -63,6 +63,7 @@ install: bundle
 	-rm -f $(LEGACY_BIN)
 	sed 's|__BINARY_PATH__|$(EXEC_PATH)|g' $(TEMPLATE) > $(LAUNCH_AGENT)
 	-launchctl bootout gui/$(UID)/$(LABEL) 2>/dev/null || true
+	-: > /tmp/ghostty-paste.log
 	launchctl bootstrap gui/$(UID) $(LAUNCH_AGENT)
 	@echo ""
 	@echo "✅ 설치 완료 → $(INSTALLED_APP)"

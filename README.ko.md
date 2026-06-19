@@ -14,8 +14,8 @@ Claude Code 같은 터미널 앱에 이미지를 붙일 때 `Ctrl+V`를 따로 �
 
 `ghostty-paste`는 전역 키 이벤트 탭으로 `Cmd+V`를 가로채서:
 
-- **Ghostty가 최상위 앱이고** 클립보드에 **이미지**가 있으면 → PNG로 저장한 뒤 원래
-  `Cmd+V`는 삼키고 그 파일 경로를 타이핑한다 (앱이 경로를 이미지 첨부로 인식).
+- **Ghostty가 최상위 앱이고** 클립보드에 **이미지**가 있으면 → 원래 `Cmd+V`는 삼키고
+  대신 `Ctrl+V`를 보내 Claude Code의 네이티브 이미지 붙여넣기를 트리거한다.
 - 그 외(텍스트이거나 다른 앱) → 전혀 개입하지 않고 그대로 통과시킨다.
 
 ## 요구사항
@@ -26,13 +26,13 @@ Claude Code 같은 터미널 앱에 이미지를 붙일 때 `Ctrl+V`를 따로 �
 
 ## 설치
 
-### 방법 1 — 원라이너 (미리 빌드된 바이너리, 가장 쉬움)
+### 방법 1 — 원라이너 (미리 빌드된 앱, 가장 쉬움)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | bash
 ```
 
-최신 릴리스의 universal 바이너리를 `~/.local/bin`에 받고, LaunchAgent(로그인 시 자동
+최신 릴리스의 universal `.app`을 `~/Applications`에 받고, LaunchAgent(로그인 시 자동
 실행)를 등록하고, Gatekeeper quarantine 속성을 떼어 준다. 특정 버전을 고정하려면 태그를
 넘긴다:
 
@@ -58,7 +58,7 @@ macOS 권한 요청 다이얼로그를 띄우고 목록에 자동 등록하므�
 2. 목록의 **ghostty-paste** 토글을 **켠다**
 
 약 2초 안에 자동으로 활성화된다 — 재시작 불필요. 이미지를 복사하고 Ghostty에서 `Cmd+V`를
-누르면 경로가 입력된다.
+누르면, 직접 `Ctrl+V`를 눌렀을 때처럼 Claude Code에 진짜 이미지 첨부로 들어간다.
 
 > 예전 빌드에서 업그레이드한 뒤 붙여넣기가 안 되면, 목록의 오래된 `ghostty-paste` 항목을
 > 제거(선택 후 **−**)하고 `make install`을 다시 실행한 다음 토글을 다시 켜라.
@@ -81,7 +81,6 @@ rm -rf ~/Library/LaunchAgents/com.github.ghostty-paste.plist ~/Applications/ghos
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
 | `GHOSTTY_PASTE_BUNDLE_ID` | `com.mitchellh.ghostty` | 개입할 앱의 번들 ID |
-| `GHOSTTY_PASTE_CACHE_DIR` | `~/.cache/ghostty-paste` | 저장된 PNG 위치 |
 
 번들 ID 확인: `osascript -e 'id of app "Ghostty"'`
 
@@ -127,7 +126,7 @@ sudo mv /Library/Developer/CommandLineTools/usr/include/swift/module.modulemap \
 ```
 Cmd+V (Ghostty 최상위)
    │
-   ├─ 클립보드가 이미지?  ── 예 ─▶ PNG 저장 → 원래 Cmd+V 삼킴 → 경로 타이핑
+   ├─ 클립보드가 이미지?  ── 예 ─▶ 원래 Cmd+V 삼킴 → Ctrl+V 전송
    │
    └─ 아니오(텍스트/다른 앱) ─▶ 그대로 통과 (평범한 Cmd+V)
 ```
