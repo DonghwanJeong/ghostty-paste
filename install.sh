@@ -1,10 +1,26 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # ghostty-paste remote installer — downloads the released .app and installs it.
 #
-#   curl -fsSL .../install.sh | bash               # latest release
-#   curl -fsSL .../install.sh | bash -s -- v0.1.1   # a specific tag
+#   curl -fsSL .../install.sh | sh                                # latest release
+#   curl -fsSL .../install.sh | GHOSTTY_PASTE_VERSION=v0.1.1 sh   # a specific tag
 #
-set -euo pipefail
+set -eu
+
+if [ "$(uname -s)" != "Darwin" ]; then
+  echo "ghostty-paste only supports macOS." >&2
+  exit 1
+fi
+
+need_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Missing required command: $1" >&2
+    exit 1
+  fi
+}
+
+need_cmd curl
+need_cmd ditto
+need_cmd launchctl
 
 REPO="DonghwanJeong/ghostty-paste"
 APP="ghostty-paste.app"
@@ -12,7 +28,7 @@ ASSET="ghostty-paste.app.zip"
 LABEL="com.github.ghostty-paste"
 APPDIR="$HOME/Applications"
 LAUNCH_AGENT="$HOME/Library/LaunchAgents/$LABEL.plist"
-TAG="${1:-latest}"
+TAG="${GHOSTTY_PASTE_VERSION:-${1:-latest}}"
 
 if [ "$TAG" = "latest" ]; then
   URL="https://github.com/$REPO/releases/latest/download/$ASSET"
@@ -63,6 +79,7 @@ cat > "$LAUNCH_AGENT" <<PLIST
 PLIST
 
 launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+: > /tmp/ghostty-paste.log || true
 launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT"
 
 cat <<MSG

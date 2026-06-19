@@ -25,12 +25,14 @@ muscle memory into text (`Cmd+V`) vs image (`Ctrl+V`).
 - Ghostty
 - For building from source only: Xcode Command Line Tools (`xcode-select --install`)
 
-## Install
+## Quick Start
 
-### Option 1 — One-liner (prebuilt app, easiest)
+### Step 1: Install ghostty-paste
+
+macOS:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | sh
 ```
 
 Downloads the latest release's universal `.app` into `~/Applications`, registers the
@@ -38,18 +40,10 @@ LaunchAgent (auto-start on login), and strips the Gatekeeper quarantine attribut
 version by passing a tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | bash -s -- v0.1.0
+curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | GHOSTTY_PASTE_VERSION=v0.1.1 sh
 ```
 
-### Option 2 — Build from source
-
-```bash
-git clone https://github.com/DonghwanJeong/ghostty-paste
-cd ghostty-paste
-make install
-```
-
-### Grant Accessibility permission (required)
+### Step 2: Grant Accessibility permission
 
 A global key tap needs **Accessibility** permission. On first run the daemon pops the
 standard macOS permission dialog and registers itself in the list, so you only flip a toggle:
@@ -61,6 +55,14 @@ standard macOS permission dialog and registers itself in the list, so you only f
 It activates automatically within ~2s — no restart needed. Copy an image, focus Ghostty,
 press `Cmd+V` — Claude Code receives it as a real image attachment, just like pressing
 `Ctrl+V` directly.
+
+### Build from source
+
+```bash
+git clone https://github.com/DonghwanJeong/ghostty-paste
+cd ghostty-paste
+make install
+```
 
 > Upgrading from an older build and paste stopped working? Remove the stale `ghostty-paste`
 > entry (select it, click **−**), run `make install` again, then re-enable the toggle.

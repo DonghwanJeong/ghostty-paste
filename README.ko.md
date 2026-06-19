@@ -24,12 +24,14 @@ Claude Code 같은 터미널 앱에 이미지를 붙일 때 `Ctrl+V`를 따로 �
 - Ghostty
 - 소스 빌드 시에만: Xcode Command Line Tools (`xcode-select --install`)
 
-## 설치
+## 빠른 시작
 
-### 방법 1 — 원라이너 (미리 빌드된 앱, 가장 쉬움)
+### Step 1: ghostty-paste 설치
+
+macOS:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | sh
 ```
 
 최신 릴리스의 universal `.app`을 `~/Applications`에 받고, LaunchAgent(로그인 시 자동
@@ -37,18 +39,10 @@ curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/in
 넘긴다:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | bash -s -- v0.1.0
+curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | GHOSTTY_PASTE_VERSION=v0.1.1 sh
 ```
 
-### 방법 2 — 소스 빌드
-
-```bash
-git clone https://github.com/DonghwanJeong/ghostty-paste
-cd ghostty-paste
-make install
-```
-
-### 손쉬운 사용 권한 (필수)
+### Step 2: 손쉬운 사용 권한 켜기
 
 전역 키 후킹이라 **손쉬운 사용(Accessibility) 권한**이 필요하다. 처음 실행하면 데몬이 표준
 macOS 권한 요청 다이얼로그를 띄우고 목록에 자동 등록하므로, 토글만 켜면 된다:
@@ -59,6 +53,14 @@ macOS 권한 요청 다이얼로그를 띄우고 목록에 자동 등록하므�
 
 약 2초 안에 자동으로 활성화된다 — 재시작 불필요. 이미지를 복사하고 Ghostty에서 `Cmd+V`를
 누르면, 직접 `Ctrl+V`를 눌렀을 때처럼 Claude Code에 진짜 이미지 첨부로 들어간다.
+
+### 소스 빌드
+
+```bash
+git clone https://github.com/DonghwanJeong/ghostty-paste
+cd ghostty-paste
+make install
+```
 
 > 예전 빌드에서 업그레이드한 뒤 붙여넣기가 안 되면, 목록의 오래된 `ghostty-paste` 항목을
 > 제거(선택 후 **−**)하고 `make install`을 다시 실행한 다음 토글을 다시 켜라.
