@@ -86,13 +86,18 @@ let callback: CGEventTapCallBack = { _, type, event, _ in
     guard NSWorkspace.shared.frontmostApplication?.bundleIdentifier == kTargetBundleID else {
         return Unmanaged.passUnretained(event)
     }
-    // 클립보드가 이미지가 아니면(텍스트 등) 원래 Cmd+V를 그대로 통과.
-    guard let path = saveClipboardImageToFile() else {
-        return Unmanaged.passUnretained(event)
+    // 클립보드에 이미지 "타입"만 즉시 확인한다(디코딩/저장은 하지 않음).
+    // 이렇게 해야 콜백이 절대 블록되지 않아 키 입력이 느려지지 않는다.
+    guard NSPasteboard.general.availableType(from: [.png, .tiff]) != nil else {
+        return Unmanaged.passUnretained(event)   // 이미지 아님(텍스트 등) → 평범한 Cmd+V 통과
     }
-    // 이미지면: 원래 Cmd+V는 삼키고 경로를 대신 타이핑(뒤에 공백 하나로 토큰 확정).
-    // 사용자가 Cmd를 떼는 짧은 시간을 준 뒤 입력해 모디파이어 간섭을 더 줄인다.
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { typeString(path + " ") }
+    // 이미지면: 원래 Cmd+V는 삼키고, 무거울 수 있는 저장과 타이핑은 비동기로 처리한다
+    // (Cmd를 떼는 짧은 시간도 줘서 모디파이어 간섭을 줄인다).
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+        if let path = saveClipboardImageToFile() {
+            typeString(path + " ")
+        }
+    }
     return nil
 }
 
