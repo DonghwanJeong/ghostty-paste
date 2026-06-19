@@ -52,18 +52,18 @@ make install
 
 ### Grant Accessibility permission (required)
 
-A global key tap needs **Accessibility** permission.
+A global key tap needs **Accessibility** permission. On first run the daemon pops the
+standard macOS permission dialog and registers itself in the list, so you only flip a toggle:
 
-1. **System Settings → Privacy & Security → Accessibility**
-2. Add `~/.local/bin/ghostty-paste` and turn its toggle on
-3. Restart the daemon:
+1. When the **"ghostty-paste would like to control this computer"** dialog appears, click
+   **Open System Settings** (or open **System Settings → Privacy & Security → Accessibility**)
+2. Turn the **ghostty-paste** toggle **on**
 
-```bash
-make reload    # from a source checkout, or:
-launchctl kickstart -k gui/$(id -u)/com.github.ghostty-paste
-```
+It activates automatically within ~2s — no restart needed. Copy an image, focus Ghostty,
+press `Cmd+V` — the path gets typed in.
 
-Copy an image, focus Ghostty, press `Cmd+V` — the path gets typed in.
+> Upgrading from an older build and paste stopped working? Remove the stale `ghostty-paste`
+> entry (select it, click **−**), run `make install` again, then re-enable the toggle.
 
 ## Uninstall
 

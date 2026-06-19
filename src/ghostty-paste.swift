@@ -1,4 +1,5 @@
 import Cocoa
+import ApplicationServices
 
 // Ghostty에서 Cmd+V를 눌렀을 때 클립보드에 이미지가 있으면 PNG로 저장한 뒤
 // 그 경로를 타이핑한다(Claude Code 등이 경로를 이미지 첨부로 인식).
@@ -92,18 +93,32 @@ let callback: CGEventTapCallBack = { _, type, event, _ in
 
 ensureCacheDir()
 
-guard let tap = CGEvent.tapCreate(
-    tap: .cgSessionEventTap,
-    place: .headInsertEventTap,
-    options: .defaultTap,
-    eventsOfInterest: CGEventMask(1 << CGEventType.keyDown.rawValue),
-    callback: callback,
-    userInfo: nil
-) else {
-    FileHandle.standardError.write(Data(
-        "ghostty-paste: 이벤트 탭 생성 실패. 손쉬운 사용(Accessibility) 권한을 켜세요.\n".utf8))
-    exit(1)
+// 손쉬운 사용 권한이 없으면 시스템 권한 요청 다이얼로그를 띄운다. 이때 ghostty-paste가
+// "손쉬운 사용" 목록에 자동 등록되므로, 사용자는 목록에서 토글만 켜면 된다.
+// ("AXTrustedCheckOptionPrompt"는 kAXTrustedCheckOptionPrompt의 문자열 값)
+if !AXIsProcessTrusted() {
+    _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+    NSLog("ghostty-paste: 손쉬운 사용 권한 대기 중… 토글을 켜면 자동으로 시작됩니다")
 }
+
+// 이벤트 탭 생성. 권한이 없으면 nil이 나오므로, 권한이 생길 때까지 재시도한다
+// (권한을 켜는 즉시 자동 활성화되어 make reload가 필요 없다).
+func makeTap() -> CFMachPort? {
+    CGEvent.tapCreate(
+        tap: .cgSessionEventTap,
+        place: .headInsertEventTap,
+        options: .defaultTap,
+        eventsOfInterest: CGEventMask(1 << CGEventType.keyDown.rawValue),
+        callback: callback,
+        userInfo: nil)
+}
+
+var tapOpt = makeTap()
+while tapOpt == nil {
+    Thread.sleep(forTimeInterval: 2)
+    tapOpt = makeTap()
+}
+let tap = tapOpt!
 eventTap = tap
 
 let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
