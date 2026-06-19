@@ -21,6 +21,7 @@ need_cmd() {
 need_cmd curl
 need_cmd ditto
 need_cmd launchctl
+need_cmd tccutil
 
 REPO="DonghwanJeong/ghostty-paste"
 APP="ghostty-paste.app"
@@ -41,6 +42,12 @@ trap 'rm -rf "$TMP"' EXIT
 
 echo "▶ downloading: $URL"
 curl -fsSL "$URL" -o "$TMP/$ASSET"
+
+echo "▶ stopping existing LaunchAgent"
+launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+
+echo "▶ resetting Accessibility permission"
+tccutil reset Accessibility "$LABEL" >/dev/null 2>&1 || true
 
 echo "▶ installing → $APPDIR/$APP"
 mkdir -p "$APPDIR" "$(dirname "$LAUNCH_AGENT")"
@@ -78,7 +85,6 @@ cat > "$LAUNCH_AGENT" <<PLIST
 </plist>
 PLIST
 
-launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
 : > /tmp/ghostty-paste.log || true
 launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT"
 
@@ -88,6 +94,6 @@ cat <<MSG
 
 ⚠️  Last step: grant Accessibility permission.
    System Settings → Privacy & Security → Accessibility →
-   turn on "ghostty-paste" (it registers by name automatically).
+   turn on "ghostty-paste" (the installer resets the old entry on each install).
    It activates within ~2s; no restart needed.
 MSG

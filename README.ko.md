@@ -1,6 +1,6 @@
 # ghostty-paste
 
-[English](README.md) · [한국어](README.ko.md)
+[English](README.md) · [Korean](README.ko.md)
 
 Ghostty에서 **`Cmd+V` 한 키로** 클립보드 이미지를 붙여넣게 해주는 작은 macOS 데몬.
 Claude Code 같은 터미널 앱에 이미지를 붙일 때 `Ctrl+V`를 따로 누를 필요가 없어진다.

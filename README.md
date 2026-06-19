@@ -1,6 +1,6 @@
 # ghostty-paste
 
-[English](README.md) · [한국어](README.ko.md)
+[English](README.md) · [Korean](README.ko.md)
 
 Paste clipboard **images with a single `Cmd+V`** in Ghostty. No more reaching for a
 separate `Ctrl+V` to drop an image into terminal apps like Claude Code. Text paste is left

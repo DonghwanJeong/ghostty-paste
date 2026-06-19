@@ -63,6 +63,7 @@ install: bundle
 	-rm -f $(LEGACY_BIN)
 	sed 's|__BINARY_PATH__|$(EXEC_PATH)|g' $(TEMPLATE) > $(LAUNCH_AGENT)
 	-launchctl bootout gui/$(UID)/$(LABEL) 2>/dev/null || true
+	-tccutil reset Accessibility $(LABEL) >/dev/null 2>&1 || true
 	-: > /tmp/ghostty-paste.log
 	launchctl bootstrap gui/$(UID) $(LAUNCH_AGENT)
 	@echo ""
@@ -70,7 +71,7 @@ install: bundle
 	@echo ""
 	@echo "⚠️  손쉬운 사용(Accessibility) 권한을 켜야 동작합니다."
 	@echo "   시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용 목록에서"
-	@echo "   'ghostty-paste'를 켜세요 (목록에 이름으로 자동 등록됩니다)."
+	@echo "   'ghostty-paste'를 켜세요 (설치 때 이전 권한 항목은 초기화됩니다)."
 	@echo "   안 보이면 시스템 설정을 완전히 종료(Cmd+Q) 후 다시 여세요."
 
 reload:
