@@ -1,0 +1,29 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build universal binary
+        run: make universal
+
+      - name: Inspect binary
+        run: |
+          file .build/ghostty-paste
+          lipo -info .build/ghostty-paste
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: .build/ghostty-paste
+          generate_release_notes: true

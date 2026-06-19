@@ -1,6 +1,7 @@
 # ghostty-paste — build & install automation
 #
-#   make build      release 바이너리 빌드
+#   make build      release 바이너리 빌드(현재 아키텍처)
+#   make universal  arm64+x86_64 유니버설 바이너리 빌드(릴리스용)
 #   make install    빌드 + 설치 + LaunchAgent 등록(로그인 시 자동 실행)
 #   make reload     데몬 재시작(권한 부여 후 등 변경 반영)
 #   make uninstall  LaunchAgent 해제 + 바이너리 제거
@@ -20,11 +21,18 @@ LAUNCH_AGENT := $(LAUNCH_DIR)/$(LABEL).plist
 TEMPLATE     := launchagent/$(LABEL).plist.template
 UID          := $(shell id -u)
 
-.PHONY: build install reload uninstall clean
+.PHONY: build universal install reload uninstall clean
 
 build:
 	@mkdir -p .build
 	swiftc -O -swift-version 5 $(SRC) -o $(BUILD_BIN)
+
+universal:
+	@mkdir -p .build
+	swiftc -O -swift-version 5 -target arm64-apple-macos12  $(SRC) -o $(BUILD_BIN)-arm64
+	swiftc -O -swift-version 5 -target x86_64-apple-macos12 $(SRC) -o $(BUILD_BIN)-x86_64
+	lipo -create -output $(BUILD_BIN) $(BUILD_BIN)-arm64 $(BUILD_BIN)-x86_64
+	@file $(BUILD_BIN)
 
 install: build
 	@mkdir -p $(BINDIR) $(LAUNCH_DIR)

@@ -1,110 +1,136 @@
 # ghostty-paste
 
-Ghostty에서 **`Cmd+V` 한 키로** 클립보드 이미지를 붙여넣게 해주는 작은 macOS 데몬.
-Claude Code 같은 터미널 앱에 이미지를 붙일 때 `Ctrl+V`를 따로 누를 필요가 없어진다.
-텍스트 붙여넣기는 손대지 않으므로 평소처럼 동작한다.
+[English](README.md) · [한국어](README.ko.md)
 
-## 왜 필요한가
+Paste clipboard **images with a single `Cmd+V`** in Ghostty. No more reaching for a
+separate `Ctrl+V` to drop an image into terminal apps like Claude Code. Text paste is left
+untouched, so it behaves exactly as before.
 
-터미널 에뮬레이터(Ghostty 포함)는 클립보드의 **이미지**를 붙여넣지 못한다. `Cmd+V`는
-표준 텍스트 붙여넣기라 텍스트만 전달된다. 그래서 Claude Code는 비표준 `Ctrl+V` 핸들러로
-클립보드 이미지를 직접 읽는데, 결국 키가 텍스트(`Cmd+V`)/이미지(`Ctrl+V`)로 갈라진다.
+## Why
 
-`ghostty-paste`는 전역 키 이벤트 탭으로 `Cmd+V`를 가로채서:
+Terminal emulators (Ghostty included) can't paste **images** from the clipboard — `Cmd+V`
+is a standard text paste and only carries text. Claude Code works around this with a
+non-standard `Ctrl+V` handler that reads the clipboard image directly, which splits your
+muscle memory into text (`Cmd+V`) vs image (`Ctrl+V`).
 
-- **Ghostty가 최상위 앱이고** 클립보드에 **이미지**가 있으면 → PNG로 저장한 뒤 원래
-  `Cmd+V`는 삼키고 그 파일 경로를 타이핑한다 (앱이 경로를 이미지 첨부로 인식).
-- 그 외(텍스트이거나 다른 앱) → 전혀 개입하지 않고 그대로 통과시킨다.
+`ghostty-paste` is a tiny daemon that taps `Cmd+V` globally and:
 
-## 요구사항
+- If **Ghostty is frontmost** and the clipboard holds an **image** → saves it as a PNG,
+  swallows the original `Cmd+V`, and types the file path instead (the app recognizes the
+  path as an image attachment).
+- Otherwise (text, or any other app) → stays out of the way and lets `Cmd+V` through.
+
+## Requirements
 
 - macOS
-- Xcode Command Line Tools — `xcode-select --install` (`swift`/`swiftc` 제공)
 - Ghostty
+- For building from source only: Xcode Command Line Tools (`xcode-select --install`)
 
-## 설치
+## Install
+
+### Option 1 — One-liner (prebuilt binary, easiest)
 
 ```bash
-git clone <이-저장소-URL> ghostty-paste
+curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | bash
+```
+
+Downloads the latest release's universal binary into `~/.local/bin`, registers the
+LaunchAgent (auto-start on login), and strips the Gatekeeper quarantine attribute. Pin a
+version by passing a tag:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DonghwanJeong/ghostty-paste/main/install.sh | bash -s -- v0.1.0
+```
+
+### Option 2 — Build from source
+
+```bash
+git clone https://github.com/DonghwanJeong/ghostty-paste
 cd ghostty-paste
 make install
 ```
 
-`make install`은 다음을 한다:
+### Grant Accessibility permission (required)
 
-1. release 바이너리 빌드 (`swiftc -O`)
-2. `~/.local/bin/ghostty-paste`로 복사 (`PREFIX`로 변경 가능)
-3. 현재 경로가 채워진 LaunchAgent를 `~/Library/LaunchAgents/`에 생성 후 로드 (로그인 시 자동 실행)
+A global key tap needs **Accessibility** permission.
 
-### 마지막 한 단계 — 손쉬운 사용 권한 (필수)
-
-전역 키 후킹이라 **손쉬운 사용(Accessibility) 권한**이 반드시 필요하다.
-
-1. **시스템 설정 → 개인정보 보호 및 보안 → 손쉬운 사용**
-2. `~/.local/bin/ghostty-paste`를 목록에 추가하고 토글을 켠다
-3. 권한을 켠 뒤 데몬 재시작:
+1. **System Settings → Privacy & Security → Accessibility**
+2. Add `~/.local/bin/ghostty-paste` and turn its toggle on
+3. Restart the daemon:
 
 ```bash
-make reload
+make reload    # from a source checkout, or:
+launchctl kickstart -k gui/$(id -u)/com.github.ghostty-paste
 ```
 
-이제 이미지를 복사하고 Ghostty에서 `Cmd+V`를 누르면 경로가 입력된다.
+Copy an image, focus Ghostty, press `Cmd+V` — the path gets typed in.
 
-## 제거
+## Uninstall
 
 ```bash
-make uninstall
+make uninstall            # from a source checkout, or:
+launchctl bootout gui/$(id -u)/com.github.ghostty-paste
+rm -f ~/Library/LaunchAgents/com.github.ghostty-paste.plist ~/.local/bin/ghostty-paste
 ```
 
-(손쉬운 사용 권한 목록의 항목은 시스템 설정에서 직접 지운다.)
+Remove the Accessibility entry in System Settings manually.
 
-## 설정
+## Configuration
 
-환경변수로 동작을 바꿀 수 있다. LaunchAgent로 적용하려면 plist의 `EnvironmentVariables`
-(`launchagent/...plist.template`의 주석 참고)에 넣는다.
+Override via environment variables (put them in the LaunchAgent's `EnvironmentVariables`,
+see `launchagent/...plist.template`):
 
-| 변수 | 기본값 | 설명 |
-|------|--------|------|
-| `GHOSTTY_PASTE_BUNDLE_ID` | `com.mitchellh.ghostty` | 개입할 앱의 번들 ID |
-| `GHOSTTY_PASTE_CACHE_DIR` | `~/.cache/ghostty-paste` | 저장된 PNG 위치 |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GHOSTTY_PASTE_BUNDLE_ID` | `com.mitchellh.ghostty` | Bundle ID of the app to act on |
+| `GHOSTTY_PASTE_CACHE_DIR` | `~/.cache/ghostty-paste` | Where PNGs are saved |
 
-번들 ID 확인: `osascript -e 'id of app "Ghostty"'`
+Find a bundle ID: `osascript -e 'id of app "Ghostty"'`
 
-## 다른 PC에 적용
+## Releases
 
-각 PC에서 `git clone` 후 `make install`. 바이너리는 그 PC에서 컴파일되므로 아키텍처
-(Apple Silicon/Intel)를 신경 쓸 필요가 없고, 경로는 `$HOME` 기준으로 자동 생성된다.
-단 **손쉬운 사용 권한은 PC마다 수동으로** 켜야 한다(보안상 자동화 불가).
+Pushing a `v*` tag triggers a GitHub Actions workflow that builds a universal
+(arm64 + x86_64) binary and attaches it to the GitHub Release:
 
-## 트러블슈팅
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+> The released binary is **unsigned / not notarized** (no Apple Developer account).
+> `install.sh` removes the quarantine attribute so it runs. If you download it via a
+> browser and run it manually, you may need:
+> `xattr -d com.apple.quarantine ~/.local/bin/ghostty-paste`
+
+## Troubleshooting
 
 ### `error: redefinition of module 'SwiftBridging'`
 
-Command Line Tools를 업데이트할 때 옛 `module.modulemap`이 남아 최신
-`bridging.modulemap`과 같은 모듈을 중복 정의해서 생기는 **툴체인 버그**다(이 저장소와 무관,
-머신의 모든 Swift 빌드가 막힌다). 옛 파일을 비활성화하면 해결된다:
+Affects **building from source** only. An old `module.modulemap` left behind by a Command
+Line Tools update collides with the current `bridging.modulemap` — a toolchain bug (not
+this repo) that breaks every Swift build on the machine. Disable the stale file:
 
 ```bash
 sudo mv /Library/Developer/CommandLineTools/usr/include/swift/module.modulemap \
         /Library/Developer/CommandLineTools/usr/include/swift/module.modulemap.disabled
 ```
 
-되돌리려면 `.disabled`를 떼서 원래 이름으로 `mv`. 또는 CLT를 깨끗이 재설치:
+Reverse by renaming it back, or reinstall CLT:
 `sudo rm -rf /Library/Developer/CommandLineTools && sudo xcode-select --install`
 
-### `Cmd+V`를 눌러도 이미지가 안 붙는다
+### `Cmd+V` doesn't paste images
 
-- 손쉬운 사용 권한이 켜져 있는지 확인 → 켠 뒤 `make reload`
-- 데몬이 떠 있는지: `launchctl print gui/$(id -u)/com.github.ghostty-paste`
-- 로그 확인: `cat /tmp/ghostty-paste.log`
-- 대상 번들 ID가 맞는지: `osascript -e 'id of app "Ghostty"'`
+- Confirm Accessibility is on → then `make reload`
+- Is the daemon running? `launchctl print gui/$(id -u)/com.github.ghostty-paste`
+- Check the log: `cat /tmp/ghostty-paste.log`
+- Right target bundle ID? `osascript -e 'id of app "Ghostty"'`
 
-## 동작 방식 한눈에
+## How it works
 
 ```
-Cmd+V (Ghostty 최상위)
+Cmd+V (Ghostty frontmost)
    │
-   ├─ 클립보드가 이미지?  ── 예 ─▶ PNG 저장 → 원래 Cmd+V 삼킴 → 경로 타이핑
+   ├─ clipboard is an image?  ── yes ─▶ save PNG → swallow Cmd+V → type the path
    │
-   └─ 아니오(텍스트/다른 앱) ─▶ 그대로 통과 (평범한 Cmd+V)
+   └─ no (text / other app) ──▶ pass through (normal Cmd+V)
 ```
