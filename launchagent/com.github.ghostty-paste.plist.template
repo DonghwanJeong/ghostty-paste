@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- __BINARY_PATH__ 는 `make install` 시 실제 설치 경로로 치환됩니다. -->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.github.ghostty-paste</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__BINARY_PATH__</string>
+    </array>
+
+    <!-- 다른 터미널을 쓰면 아래 주석을 풀고 번들 ID를 바꾸세요
+         (확인: osascript -e 'id of app "Ghostty"'):
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>GHOSTTY_PASTE_BUNDLE_ID</key>
+        <string>com.mitchellh.ghostty</string>
+    </dict>
+    -->
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Interactive</string>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/ghostty-paste.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/ghostty-paste.log</string>
+</dict>
+</plist>
