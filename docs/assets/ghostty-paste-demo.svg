@@ -1,0 +1,56 @@
+<svg width="1200" height="540" viewBox="0 0 1200 540" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">ghostty-paste demo</title>
+  <desc id="desc">A terminal demo showing Cmd+V in Ghostty turning a clipboard image into a Claude Code image attachment.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="540" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B0F17"/>
+      <stop offset="0.55" stop-color="#111827"/>
+      <stop offset="1" stop-color="#15151F"/>
+    </linearGradient>
+    <linearGradient id="terminal" x1="140" y1="70" x2="1060" y2="470" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1B1D2B"/>
+      <stop offset="1" stop-color="#242033"/>
+    </linearGradient>
+    <linearGradient id="chip" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#7DD3FC"/>
+      <stop offset="1" stop-color="#A7F3D0"/>
+    </linearGradient>
+    <filter id="shadow" x="80" y="30" width="1040" height="500" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="28" stdDeviation="34" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="540" rx="28" fill="url(#bg)"/>
+  <circle cx="145" cy="95" r="74" fill="#22C55E" opacity="0.10"/>
+  <circle cx="1040" cy="430" r="110" fill="#38BDF8" opacity="0.08"/>
+
+  <g filter="url(#shadow)">
+    <rect x="140" y="70" width="920" height="400" rx="18" fill="url(#terminal)" stroke="#374151"/>
+    <rect x="140" y="70" width="920" height="46" rx="18" fill="#111827"/>
+    <path d="M140 100H1060V116H140V100Z" fill="#111827"/>
+    <circle cx="171" cy="93" r="7" fill="#F87171"/>
+    <circle cx="195" cy="93" r="7" fill="#FBBF24"/>
+    <circle cx="219" cy="93" r="7" fill="#34D399"/>
+    <text x="600" y="99" text-anchor="middle" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="15" fill="#9CA3AF">Ghostty · Claude Code</text>
+
+    <text x="185" y="158" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="26" fill="#E5E7EB">$ copy screenshot to clipboard</text>
+    <text x="185" y="202" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="26" fill="#E5E7EB">$ press </text>
+    <rect x="290" y="174" width="108" height="40" rx="9" fill="#334155" stroke="#475569"/>
+    <text x="344" y="202" text-anchor="middle" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="23" font-weight="700" fill="#F8FAFC">Cmd+V</text>
+    <text x="416" y="202" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="26" fill="#E5E7EB"> in Ghostty</text>
+
+    <path d="M214 244H986" stroke="#374151" stroke-dasharray="8 10"/>
+    <path d="M568 236L600 268L632 236" stroke="#93C5FD" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text x="185" y="318" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="26" fill="#A7F3D0">ghostty-paste</text>
+    <text x="405" y="318" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="26" fill="#CBD5E1"> sends native </text>
+    <rect x="622" y="290" width="108" height="40" rx="9" fill="#312E81" stroke="#4F46E5"/>
+    <text x="676" y="318" text-anchor="middle" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="23" font-weight="700" fill="#E0E7FF">Ctrl+V</text>
+
+    <rect x="185" y="356" width="230" height="56" rx="13" fill="url(#chip)" opacity="0.95"/>
+    <text x="300" y="392" text-anchor="middle" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="25" font-weight="800" fill="#0F172A">[Image #1]</text>
+    <text x="438" y="392" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="26" fill="#E5E7EB">attached in Claude Code</text>
+  </g>
+
+  <text x="600" y="515" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="24" font-style="italic" fill="#D1D5DB">Copy image -> Cmd+V -> real Claude Code image attachment</text>
+</svg>

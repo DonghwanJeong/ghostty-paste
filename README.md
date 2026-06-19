@@ -1,10 +1,26 @@
-# ghostty-paste
+<div align="center">
 
-[English](README.md) · [Korean](README.ko.md)
+<h1>ghostty-paste</h1>
 
-Paste clipboard **images with a single `Cmd+V`** in Ghostty. No more reaching for a
-separate `Ctrl+V` to drop an image into terminal apps like Claude Code. Text paste is left
-untouched, so it behaves exactly as before.
+<p>Paste clipboard <strong>images with a single <code>Cmd+V</code></strong> in Ghostty.</p>
+
+<p>
+  <a href="https://github.com/DonghwanJeong/ghostty-paste/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/DonghwanJeong/ghostty-paste?style=flat-square&label=release"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/DonghwanJeong/ghostty-paste?style=flat-square"></a>
+  <img alt="macOS" src="https://img.shields.io/badge/macOS-12%2B-111827?style=flat-square&logo=apple">
+  <a href="https://github.com/DonghwanJeong/ghostty-paste/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/DonghwanJeong/ghostty-paste?style=social"></a>
+</p>
+
+<img src="docs/assets/ghostty-paste-demo.svg" alt="ghostty-paste demo: Cmd+V turns a clipboard image into a Claude Code image attachment" width="920">
+
+<p><em>Copy image -> Cmd+V in Ghostty -> Claude Code receives [Image #1].</em></p>
+
+<p><a href="README.md">English</a> · <a href="README.ko.md">Korean</a></p>
+
+</div>
+
+No more reaching for a separate `Ctrl+V` to drop an image into terminal apps like Claude
+Code. Text paste is left untouched, so it behaves exactly as before.
 
 ## Why
 
@@ -103,6 +119,10 @@ git push origin v0.1.1
 > `install.sh` strips the quarantine attribute so it runs. If you unzip it via a browser
 > and run it manually, you may need:
 > `xattr -dr com.apple.quarantine ~/Applications/ghostty-paste.app`
+
+## License
+
+MIT
 
 ## Troubleshooting
 

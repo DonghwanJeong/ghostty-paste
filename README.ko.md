@@ -1,9 +1,25 @@
-# ghostty-paste
+<div align="center">
 
-[English](README.md) · [Korean](README.ko.md)
+<h1>ghostty-paste</h1>
 
-Ghostty에서 **`Cmd+V` 한 키로** 클립보드 이미지를 붙여넣게 해주는 작은 macOS 데몬.
-Claude Code 같은 터미널 앱에 이미지를 붙일 때 `Ctrl+V`를 따로 누를 필요가 없어진다.
+<p>Ghostty에서 <strong><code>Cmd+V</code> 한 키로</strong> 클립보드 이미지를 붙여넣는다.</p>
+
+<p>
+  <a href="https://github.com/DonghwanJeong/ghostty-paste/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/DonghwanJeong/ghostty-paste?style=flat-square&label=release"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/DonghwanJeong/ghostty-paste?style=flat-square"></a>
+  <img alt="macOS" src="https://img.shields.io/badge/macOS-12%2B-111827?style=flat-square&logo=apple">
+  <a href="https://github.com/DonghwanJeong/ghostty-paste/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/DonghwanJeong/ghostty-paste?style=social"></a>
+</p>
+
+<img src="docs/assets/ghostty-paste-demo.svg" alt="ghostty-paste demo: Cmd+V turns a clipboard image into a Claude Code image attachment" width="920">
+
+<p><em>이미지 복사 -> Ghostty에서 Cmd+V -> Claude Code에 [Image #1]로 첨부.</em></p>
+
+<p><a href="README.md">English</a> · <a href="README.ko.md">Korean</a></p>
+
+</div>
+
+Claude Code 같은 터미널 앱에 이미지를 붙일 때 `Ctrl+V`를 따로 누를 필요가 없다.
 텍스트 붙여넣기는 손대지 않으므로 평소처럼 동작한다.
 
 ## 왜 필요한가
@@ -99,6 +115,10 @@ git push origin v0.1.1
 > 릴리스 앱은 **ad-hoc 서명이며 공증되지 않았다**(Apple Developer 계정 없음). `install.sh`가
 > quarantine 속성을 제거해 실행되게 한다. 브라우저로 직접 압축을 풀어 수동 실행할 경우 다음이
 > 필요할 수 있다: `xattr -dr com.apple.quarantine ~/Applications/ghostty-paste.app`
+
+## License
+
+MIT
 
 ## 트러블슈팅
 
