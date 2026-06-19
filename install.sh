@@ -1,32 +1,41 @@
 #!/usr/bin/env bash
-# ghostty-paste remote installer — downloads a released binary and installs it.
+# ghostty-paste remote installer — downloads the released .app and installs it.
 #
 #   curl -fsSL .../install.sh | bash               # latest release
-#   curl -fsSL .../install.sh | bash -s -- v0.1.0   # a specific tag
+#   curl -fsSL .../install.sh | bash -s -- v0.1.1   # a specific tag
 #
 set -euo pipefail
 
 REPO="DonghwanJeong/ghostty-paste"
-BIN="ghostty-paste"
+APP="ghostty-paste.app"
+ASSET="ghostty-paste.app.zip"
 LABEL="com.github.ghostty-paste"
-PREFIX="${PREFIX:-$HOME/.local}"
-BINDIR="$PREFIX/bin"
+APPDIR="$HOME/Applications"
 LAUNCH_AGENT="$HOME/Library/LaunchAgents/$LABEL.plist"
 TAG="${1:-latest}"
 
 if [ "$TAG" = "latest" ]; then
-  URL="https://github.com/$REPO/releases/latest/download/$BIN"
+  URL="https://github.com/$REPO/releases/latest/download/$ASSET"
 else
-  URL="https://github.com/$REPO/releases/download/$TAG/$BIN"
+  URL="https://github.com/$REPO/releases/download/$TAG/$ASSET"
 fi
 
-echo "▶ downloading: $URL"
-mkdir -p "$BINDIR" "$(dirname "$LAUNCH_AGENT")"
-curl -fsSL "$URL" -o "$BINDIR/$BIN"
-chmod +x "$BINDIR/$BIN"
-# strip Gatekeeper quarantine from the unsigned binary
-xattr -d com.apple.quarantine "$BINDIR/$BIN" 2>/dev/null || true
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
 
+echo "▶ downloading: $URL"
+curl -fsSL "$URL" -o "$TMP/$ASSET"
+
+echo "▶ installing → $APPDIR/$APP"
+mkdir -p "$APPDIR" "$(dirname "$LAUNCH_AGENT")"
+rm -rf "$APPDIR/$APP"
+ditto -x -k "$TMP/$ASSET" "$APPDIR"
+# strip Gatekeeper quarantine from the ad-hoc-signed bundle
+xattr -dr com.apple.quarantine "$APPDIR/$APP" 2>/dev/null || true
+# clean up any older bare-binary install
+rm -f "$HOME/.local/bin/ghostty-paste"
+
+EXEC="$APPDIR/$APP/Contents/MacOS/ghostty-paste"
 echo "▶ registering LaunchAgent"
 cat > "$LAUNCH_AGENT" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -37,7 +46,7 @@ cat > "$LAUNCH_AGENT" <<PLIST
     <string>$LABEL</string>
     <key>ProgramArguments</key>
     <array>
-        <string>$BINDIR/$BIN</string>
+        <string>$EXEC</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
@@ -58,10 +67,10 @@ launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT"
 
 cat <<MSG
 
-✅ Installed → $BINDIR/$BIN
+✅ Installed → $APPDIR/$APP
 
 ⚠️  Last step: grant Accessibility permission.
    System Settings → Privacy & Security → Accessibility →
-   add $BINDIR/$BIN and turn it on, then:
-   launchctl kickstart -k gui/$(id -u)/$LABEL
+   turn on "ghostty-paste" (it registers by name automatically).
+   It activates within ~2s; no restart needed.
 MSG

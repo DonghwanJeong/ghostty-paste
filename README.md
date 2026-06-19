@@ -70,7 +70,7 @@ press `Cmd+V` — the path gets typed in.
 ```bash
 make uninstall            # from a source checkout, or:
 launchctl bootout gui/$(id -u)/com.github.ghostty-paste
-rm -f ~/Library/LaunchAgents/com.github.ghostty-paste.plist ~/.local/bin/ghostty-paste
+rm -rf ~/Library/LaunchAgents/com.github.ghostty-paste.plist ~/Applications/ghostty-paste.app
 ```
 
 Remove the Accessibility entry in System Settings manually.
@@ -90,17 +90,18 @@ Find a bundle ID: `osascript -e 'id of app "Ghostty"'`
 ## Releases
 
 Pushing a `v*` tag triggers a GitHub Actions workflow that builds a universal
-(arm64 + x86_64) binary and attaches it to the GitHub Release:
+(arm64 + x86_64) `ghostty-paste.app`, ad-hoc signs it, and attaches `ghostty-paste.app.zip`
+to the GitHub Release:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
-> The released binary is **unsigned / not notarized** (no Apple Developer account).
-> `install.sh` removes the quarantine attribute so it runs. If you download it via a
-> browser and run it manually, you may need:
-> `xattr -d com.apple.quarantine ~/.local/bin/ghostty-paste`
+> The released app is **ad-hoc signed, not notarized** (no Apple Developer account).
+> `install.sh` strips the quarantine attribute so it runs. If you unzip it via a browser
+> and run it manually, you may need:
+> `xattr -dr com.apple.quarantine ~/Applications/ghostty-paste.app`
 
 ## Troubleshooting
 

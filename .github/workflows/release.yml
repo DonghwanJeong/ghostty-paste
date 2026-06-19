@@ -14,16 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build universal binary
-        run: make universal
+      - name: Build universal .app zip
+        run: make release
 
-      - name: Inspect binary
+      - name: Inspect
         run: |
-          file .build/ghostty-paste
-          lipo -info .build/ghostty-paste
+          lipo -info .build/ghostty-paste.app/Contents/MacOS/ghostty-paste
+          codesign -dv --verbose=2 .build/ghostty-paste.app
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          files: .build/ghostty-paste
+          files: .build/ghostty-paste.app.zip
           generate_release_notes: true

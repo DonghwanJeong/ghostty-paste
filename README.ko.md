@@ -68,7 +68,7 @@ macOS 권한 요청 다이얼로그를 띄우고 목록에 자동 등록하므�
 ```bash
 make uninstall            # 소스 체크아웃에서, 또는:
 launchctl bootout gui/$(id -u)/com.github.ghostty-paste
-rm -f ~/Library/LaunchAgents/com.github.ghostty-paste.plist ~/.local/bin/ghostty-paste
+rm -rf ~/Library/LaunchAgents/com.github.ghostty-paste.plist ~/Applications/ghostty-paste.app
 ```
 
 손쉬운 사용 권한 목록의 항목은 시스템 설정에서 직접 지운다.
@@ -87,17 +87,17 @@ rm -f ~/Library/LaunchAgents/com.github.ghostty-paste.plist ~/.local/bin/ghostty
 
 ## 릴리스
 
-`v*` 태그를 push하면 GitHub Actions가 universal(arm64 + x86_64) 바이너리를 빌드해서
-GitHub Release에 첨부한다:
+`v*` 태그를 push하면 GitHub Actions가 universal(arm64 + x86_64) `ghostty-paste.app`을
+빌드해 ad-hoc 서명하고 `ghostty-paste.app.zip`을 GitHub Release에 첨부한다:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
-> 릴리스 바이너리는 **서명/공증되지 않았다**(Apple Developer 계정 없음). `install.sh`가
-> quarantine 속성을 제거해 실행되게 한다. 브라우저로 직접 받아 수동 실행할 경우 다음이
-> 필요할 수 있다: `xattr -d com.apple.quarantine ~/.local/bin/ghostty-paste`
+> 릴리스 앱은 **ad-hoc 서명이며 공증되지 않았다**(Apple Developer 계정 없음). `install.sh`가
+> quarantine 속성을 제거해 실행되게 한다. 브라우저로 직접 압축을 풀어 수동 실행할 경우 다음이
+> 필요할 수 있다: `xattr -dr com.apple.quarantine ~/Applications/ghostty-paste.app`
 
 ## 트러블슈팅
 

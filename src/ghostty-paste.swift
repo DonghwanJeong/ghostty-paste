@@ -48,13 +48,17 @@ func saveClipboardImageToFile() -> String? {
 
 // 문자열을 키 입력으로 삽입한다(유니코드 직접 주입이라 키맵과 무관).
 func typeString(_ s: String) {
-    let src = CGEventSource(stateID: .combinedSessionState)
+    // privateState 소스 + 빈 flags로 합성한다. 그래야 아직 눌려 있는 Cmd 같은
+    // 모디파이어가 입력에 섞여 단축키로 해석되는 것을 막는다(안 그러면 글자가 안 들어감).
+    let src = CGEventSource(stateID: .privateState)
     var chars = Array(s.utf16)
     if let down = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true) {
+        down.flags = []
         down.keyboardSetUnicodeString(stringLength: chars.count, unicodeString: &chars)
         down.post(tap: .cghidEventTap)
     }
     if let up = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: false) {
+        up.flags = []
         up.keyboardSetUnicodeString(stringLength: chars.count, unicodeString: &chars)
         up.post(tap: .cghidEventTap)
     }
@@ -87,11 +91,20 @@ let callback: CGEventTapCallBack = { _, type, event, _ in
         return Unmanaged.passUnretained(event)
     }
     // 이미지면: 원래 Cmd+V는 삼키고 경로를 대신 타이핑(뒤에 공백 하나로 토큰 확정).
-    DispatchQueue.main.async { typeString(path + " ") }
+    // 사용자가 Cmd를 떼는 짧은 시간을 준 뒤 입력해 모디파이어 간섭을 더 줄인다.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { typeString(path + " ") }
     return nil
 }
 
 ensureCacheDir()
+
+// 단일 인스턴스 보장: 락을 못 잡으면 다른 인스턴스가 이미 실행 중이므로 즉시 종료한다
+// (open으로 중복 실행돼 Cmd+V를 두 번 가로채는 것을 방지). fd는 닫지 않고 살려 둔다.
+let lockFD = open("\(kCacheDir)/.lock", O_CREAT | O_RDWR, 0o644)
+if lockFD < 0 || flock(lockFD, LOCK_EX | LOCK_NB) != 0 {
+    NSLog("ghostty-paste: 이미 실행 중인 인스턴스가 있어 종료합니다")
+    exit(0)
+}
 
 // 손쉬운 사용 권한이 없으면 시스템 권한 요청 다이얼로그를 띄운다. 이때 ghostty-paste가
 // "손쉬운 사용" 목록에 자동 등록되므로, 사용자는 목록에서 토글만 켜면 된다.
